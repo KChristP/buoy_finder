@@ -1,0 +1,40 @@
+<html>
+  <head>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+
+    google.load("feeds", "1");
+
+    function initialize() {
+      var feed = new google.feeds.Feed("http://www.ndbc.noaa.gov/rss/ndbc_obs_search.php?lat=40N&lon=73W&radius=100");
+      feed.setNumEntries(100)
+      feed.load(function(result) {
+        console.log(result);
+        if (!result.error) {
+          var container = document.getElementById("feed");
+          for (var i = 0; i < result.feed.entries.length; i++) {
+            var entry = result.feed.entries[i];
+            console.log(entry);
+            var div = document.createElement("div");
+            div.appendChild(document.createTextNode(entry.title));
+            container.appendChild(div);
+          }
+        }
+      });
+    }
+    google.setOnLoadCallback(initialize);
+
+    </script>
+  </head>
+  <body>
+    <form class="location_input" action="index.html" method="post">
+      <label for="latitude">Latitude
+        <input type="text" name="latitude" value="0">
+      </label>
+      <label for="longitude">Longitude
+        <input type="text" name="longitude" value="0">
+      </label>
+    </form>
+    <div id="feed"></div>
+  </body>
+</html>
