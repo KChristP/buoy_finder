@@ -1,92 +1,118 @@
-// google.load("feeds", "1");
-//
-// function initialize() {
-//   var feed = new google.feeds.Feed("http://www.ndbc.noaa.gov/rss/ndbc_obs_search.php?lat=40N&lon=73W&radius=100");
-//   feed.setNumEntries(100)
-//   feed.load(function(result) {
-//     console.log(result);
-//     if (!result.error) {
-//       var container = document.getElementById("feed");
-//       for (var i = 0; i < result.feed.entries.length; i++) {
-//         var entry = result.feed.entries[i];
-//         console.log(entry);
-//         var div = document.createElement("div");
-//         div.appendChild(document.createTextNode(entry.title));
-//         container.appendChild(div);
-//       }
-//     }
-//   });
-// }
-// google.setOnLoadCallback(initialize);
 import React from 'react';
 import React3 from 'react-three-renderer';
 import THREE from 'three';
 import ReactDOM from 'react-dom';
+import Buoy from './buoy';
+// import UserInput from './user_input';
+import Scene from './scene';
+import {mockJson} from './mockData'
 
-class Simple extends React.Component {
-  constructor(props, context) {
+
+class Main extends React.Component {
+  constructor(props, context){
     super(props, context);
-
-    // construct the position vector here, because if we use 'new' within render,
-    // React will think that things have changed when they have not.
-    this.cameraPosition = new THREE.Vector3(0, 0, 5);
-
     this.state = {
-      cubeRotation: new THREE.Euler(),
-    };
+      latitude: undefined,
+      longitude: undefined,
+      allBuoys: undefined,
+      dog: undefined
 
-    this._onAnimate = () => {
-      // we will get this callback every frame
+    }
+    this.handleLatChange = this.handleLatChange.bind(this)
+    this.handleLonChange = this.handleLonChange.bind(this)
+    this.handleSubmit = this.handleSubmit.bind(this)
+    this.lookupBuoys = this.lookupBuoys.bind(this)
 
-      // pretend cubeRotation is immutable.
-      // this helps with updates and pure rendering.
-      // React will be sure that the rotation has now updated.
-      this.setState({
-        cubeRotation: new THREE.Euler(
-          this.state.cubeRotation.x + 0.01,
-          this.state.cubeRotation.y + 0.01,
-          0
-        ),
-      });
-    };
   }
 
-  render() {
-    const width = window.innerWidth; // canvas width
-    const height = window.innerHeight; // canvas height
+  lookupBuoys(latitude, longitude){
+    // console.log(this);
+    let url = `https://api.rss2json.com/v1/api.json?rss_url=http%3A%2F%2Fwww.ndbc.noaa.gov%2Frss%2Fndbc_obs_search.php%3Flat%3D${latitude}%26lon%3D${longitude}%26radius%3D100`
+    // console.log(url);
+    let that = this
+    function setBuoys(allBuoys){
+      that.setState({dog: "nell"})
+      that.setState({allBuoys: allBuoys})
+      // console.log(allBuoys);
+    }
+    fetch(url)
+      .then(function(response){
+        return response.json()
+      })
+      .then(function(json){
+        // console.log(2, that)
+        // setBuoys(json.items) // uncomment this line, and comment out mockJson references(line46) to use live api
+        // console.log(mockJson);
+        setBuoys(JSON.parse(mockJson).items)
+      })
 
-    return (<React3
-      mainCamera="camera" // this points to the perspectiveCamera which has the name set to "camera" below
-      width={width}
-      height={height}
+    // google.load("feeds", "1");
+    // function initialize() {
+    //   let url = `http://www.ndbc.noaa.gov/rss/ndbc_obs_search.php?lat=${latitude}&lon=${longitude}&radius=100`
+    //   let feed = new google.feeds.Feed(url);
+    //   feed.setNumEntries(100)
+    //   feed.load(function(result) {
+    //     this.setState({allBuoys: result.feed.entries})
+    //
+    //     // ReactDOM.render(<Scene buoys={allBuoys}/>, document.getElementById('feed'));
+    //   });
+    // }
+    //
+    // google.setOnLoadCallback(initialize.bind(this));
 
-      onAnimate={this._onAnimate}
-    >
-      <scene>
-        <perspectiveCamera
-          name="camera"
-          fov={75}
-          aspect={width / height}
-          near={0.1}
-          far={1000}
+  }
 
-          position={this.cameraPosition}
-        />
-        <mesh
-          rotation={this.state.cubeRotation}
-        >
-          <boxGeometry
-            width={1}
-            height={1}
-            depth={1}
-          />
-          <meshBasicMaterial
-            color={0x00ff00}
-          />
-        </mesh>
-      </scene>
-    </React3>);
+  handleLatChange(e){
+    let value = e.target.value
+    this.setState({latitude: value})
+  }
+
+  handleLonChange(e){
+    let value = e.target.value
+    this.setState({longitude: value})
+  }
+
+  handleSubmit(e){
+    e.preventDefault()
+    this.lookupBuoys(this.state.latitude, this.state.longitude)
+  }
+
+  render(){
+    const {latitude, longitude, allBuoys, dog} = this.state
+    // console.log(allBuoys);
+    // console.log(dog);
+    return(
+      <div>
+        <form className="location_input" onSubmit={this.handleSubmit}>
+          <label>Latitude
+            <input
+              type="text"
+              name="latitude"
+              value={latitude}
+              onChange={this.handleLatChange} />
+          </label>
+          <label>Longitude
+            <input
+              type="text"
+              name="longitude"
+              value={longitude}
+              onChange={this.handleLonChange} />
+          </label>
+          <div onClick={this.handleSubmit}>Submit</div>
+        </form>
+        {
+          allBuoys ? <Scene buoys={allBuoys}/> : null
+        }
+      </div>
+    )
   }
 }
+function myRender(){
+  ReactDOM.render(<Main />, document.getElementById('root'));
 
-ReactDOM.render(<Simple/>, document.body);
+}
+myRender()
+
+// function Dog(){
+//   return(<div>dog</div>)
+// }
